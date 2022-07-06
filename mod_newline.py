@@ -15,5 +15,6 @@ while lst:
 for i in lst_:
     with open(i, 'r', encoding="utf-8") as f:
         content = f.read()
+        temp = content.strip() + "\n"
         with open(i, "w", newline="\n",encoding="utf-8") as g:
-            g.write(re.sub(r"\n{3,}", "\n\n", content))
+            g.write(re.sub(r"\n{3,}", "\n\n", temp))
