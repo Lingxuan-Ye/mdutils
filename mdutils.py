@@ -160,7 +160,7 @@ def main():
     parser_stats.set_defaults(func=__stats)
     args = parser.parse_args()
     args.func(args)
-    print("\n\nfinished.")
+    print("\nfinished.\n")
 
 
 if __name__ == "__main__":
