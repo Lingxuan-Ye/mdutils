@@ -27,11 +27,24 @@ def iterdir(
 
 
 def __formatfunc_default(raw: str) -> str:
-    rm_mul_blankline = re.sub(r"\n{3,}", "\n\n", raw.strip() + "\n")
-    mod_button_tmp = re.sub(r"\[\[(?=\S)", "[[ ", rm_mul_blankline)
-    mod_button = re.sub(r"(?<=\S)\]\]", " ]]", mod_button_tmp)
-    trim = re.sub(r" +\n", "\n", mod_button)
-    return trim
+
+    temp = raw.strip() + "\n"
+
+    # replace multiple blank lines by one
+    temp = re.sub(r"\n{3,}", "\n\n", temp)
+
+    # [[button]](src) -> [[ button ]](src)
+    temp = re.sub(r"\[\[(?=\S)", "[[ ", temp)
+    temp = re.sub(r"(?<=\S)\]\]", " ]]", temp)
+
+    # remove spaces at end of each line
+    temp = re.sub(r" +\n", "\n", temp)
+
+    # add one space for '“ (\u201c)' and '” (\u201d)'
+    temp = re.sub(r"(?<=\w)(“| {2,}“)", " “", temp)
+    temp = re.sub(r"(”|” {2,})(?=\w)", "” ", temp)
+
+    return temp
 
 
 def format(
