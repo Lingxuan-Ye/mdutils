@@ -108,7 +108,7 @@ def statistics(
         _goups = re.findall(
             r"([\u4e00-\u9fa5])|(\w)|(\S)|((?<!\n)\n(?!\n))|(\n+)|(\s)|(.)",
             raw,
-            flags=re.DOTALL
+            # flags=re.DOTALL
         )
         for j, k, l, m, n, o, p in _goups:
             if j:  # r"[\u4e00-\u9fa5]"; note that bool("") is False
@@ -130,7 +130,7 @@ def statistics(
             elif p: # r"."
                 _stat["other characters"] += 1
         _stat["characters (no spaces)"] = _stat["words"] + _stat["punctuations"]
-        _stat["characters (with spaces)"] = _stat["words"] + _stat["punctuations"] + _stat["whitespaces"]
+        _stat["characters (with spaces)"] = _stat["characters (no spaces)"] + _stat["whitespaces"]
         stat.update(_stat)
 
         if verbose:
@@ -157,9 +157,9 @@ def __format(args: argparse.Namespace) -> None:
 
 def __stats(args: argparse.Namespace) -> None:
     if args.R is None:
-        statistics(path=args.f, suffixes=args.s, recursive=args.r, verbose=args.v)
+        statistics(args.f, args.s, args.r, args.v)
     else:
-        statistics(path=args.f, suffixes=args.s, recursive=args.r, verbose=args.v, redirect_to=args.R[0], redirect_mode=args.R[1])
+        statistics(args.f, args.s, args.r, args.v, args.R[0], args.R[1])
 
 
 def main():
