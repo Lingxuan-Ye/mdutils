@@ -157,9 +157,9 @@ def __format(args: argparse.Namespace) -> None:
 
 def __stats(args: argparse.Namespace) -> None:
     if args.R is None:
-        statistics(args.f, args.s, args.r, args.v)
+        statistics(args.f, args.s, True, args.v)
     else:
-        statistics(args.f, args.s, args.r, args.v, args.R[0], args.R[1])
+        statistics(args.f, args.s, True, args.v, args.R[0], args.R[1])
 
 
 def main():
