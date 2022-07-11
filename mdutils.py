@@ -2,7 +2,7 @@ import argparse
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Callable, Container, List, Literal, Tuple
+from typing import Callable, Container, List, Literal, NamedTuple, Tuple
 
 __all__ = ["iterdir", "format", "statistics"]
 
@@ -29,16 +29,24 @@ def iterdir(
     return result
 
 
-def __formatfunc_default(raw: str) -> str:
+class FormatResult(NamedTuple):
 
+    output: str
+    questionable: bool
+
+
+def __formatfunc_default(raw: str) -> FormatResult:
     temp = raw.strip() + "\n"
 
     # replace multiple blank lines by one
     temp = re.sub(r"\n{3,}", "\n\n", temp)
 
     # [[button]](src) -> [[ button ]](src)
-    temp = re.sub(r"\[\[(?=\S)", "[[ ", temp)
-    temp = re.sub(r"(?<=\S)\]\]", " ]]", temp)
+    # [button] -> [ button ]
+    temp = re.sub(r"\[(?=[^\s\[][^\]]*\][^(])","[ ", temp)
+    temp = re.sub(r"(?<=[^\s\]\[])\](?!\()", " ]", temp)
+    # temp = re.sub(r"\[\[(?=\S)", "[[ ", temp)
+    # temp = re.sub(r"(?<=\S)\]\]", " ]]", temp)
 
     # remove spaces at end of each line
     temp = re.sub(r" +\n", "\n", temp)
@@ -47,12 +55,16 @@ def __formatfunc_default(raw: str) -> str:
     temp = re.sub(r"(?<=\w)(“| {2,}“)", " “", temp)
     temp = re.sub(r"(”|” {2,})(?=\w)", "” ", temp)
 
-    return temp
+    if re.search(r"`.*`", raw) is not None:
+        # raw text contains code block
+        return FormatResult(temp, True)
+    else:
+        return FormatResult(temp, False)
 
 
 def format(
     path: str,
-    formatfunc: Callable[[str], str] = __formatfunc_default,
+    formatfunc: Callable[[str], FormatResult] = __formatfunc_default,
     suffixes: Container[str] = None,
     recursive: bool = True
 ) -> None:
@@ -61,7 +73,13 @@ def format(
             raw = f.read()
             result = formatfunc(raw)
             with open(i, "w", newline="\n", encoding="utf-8") as g:
-                g.write(result)
+                g.write(result.output)
+            if result.questionable:
+                path_ = Path(i)
+                copy_to = path_.stem + "_raw" + path_.suffix
+                with open(copy_to, "w", newline="\n", encoding="utf-8") as g:
+                    g.write(raw)
+                print(f"ambiguity warning in file '{i}'")
 
 
 class Stat(Counter):
