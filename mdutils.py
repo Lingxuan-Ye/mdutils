@@ -76,7 +76,8 @@ def format(
                 g.write(result.output)
             if result.questionable:
                 path_ = Path(i)
-                copy_to = path_.stem + "_raw" + path_.suffix
+                copy_name = path_.stem + "_raw" + path_.suffix
+                copy_to = path_.parent / copy_name
                 with open(copy_to, "w", newline="\n", encoding="utf-8") as g:
                     g.write(raw)
                 print(f"ambiguity warning in file '{i}'")
