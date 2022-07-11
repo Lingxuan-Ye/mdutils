@@ -43,7 +43,7 @@ def __formatfunc_default(raw: str) -> FormatResult:
 
     # [[button]](src) -> [[ button ]](src)
     # [button] -> [ button ]
-    temp = re.sub(r"\[(?=[^\s\[][^\]]*\][^(])","[ ", temp)
+    temp = re.sub(r"\[(?=[^\s\[\]][^\]]*\][^(])","[ ", temp)
     temp = re.sub(r"(?<=[^\s\]\[])\](?!\()", " ]", temp)
     # temp = re.sub(r"\[\[(?=\S)", "[[ ", temp)
     # temp = re.sub(r"(?<=\S)\]\]", " ]]", temp)
