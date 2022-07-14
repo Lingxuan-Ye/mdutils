@@ -223,7 +223,7 @@ def __stats(args: argparse.Namespace) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="mdutils")
     subparsers = parser.add_subparsers(required=True, title="subcommand", metavar="")
     parser_format = subparsers.add_parser("format", help="format markdown files")
     parser_format.add_argument("-f", default=".", metavar="", help="file or diractory path (current working directory by default)")
