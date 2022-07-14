@@ -192,8 +192,8 @@ def statistics(
         message += f"\n\nDETAILS{SEP}{details}\n"
 
     if redirect_to is not None:
-        with open(redirect_to, mode=redirect_mode, newline="\n") as f:
-            print(message, file=f, end="")
+        with open(redirect_to, mode=redirect_mode, encoding="utf-8", newline="\n") as f:
+            f.write(message)
     else:
         print("\n")
         print(message, end="")
