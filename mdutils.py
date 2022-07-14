@@ -176,7 +176,7 @@ def statistics(
             _stat["lines"] += 1
         elif _linefeeds_at_EOF == 1:
             _stat["paragraphs"] += 1
-        _stat["chars_no_spaces"] = _stat["words"] + _stat["punctuations"]
+        _stat["chars_no_spaces"] = _stat["words"] + _stat["punctuations"] + _stat["other_chars"]
         _stat["chars_with_spaces"] = _stat["chars_no_spaces"] + _stat["whitespaces"]
         stat.update(_stat)
 
