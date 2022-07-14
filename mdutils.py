@@ -87,17 +87,20 @@ class Stat(Counter):
 
     def __repr__(self) -> str:
         temp = [
-            f"{'paragraphs:':<32}{self['paragraphs']}",
-            f"{'lines:':<32}{self['lines']}\n",
+            f"{'Paragraphs:':<32}{self['paragraphs']}",
+            f"{'Non-Blank Lines:':<32}{self['non_blank_lines']}",
+            f"{'Lines:':<32}{self['lines']}\n",
 
-            f"{'words:':<32}{self['words']}",
-            f"{'Chinese characters:':<32}{self['Chinese characters']}",
-            f"{'punctuations:':<32}{self['punctuations']}",
-            f"{'whitespaces:':<32}{self['whitespaces']}",
-            f"{'other characters:':<32}{self['other characters']}\n",
+            f"{'Words:':<32}{self['words']}",
+            f"{'Chinese:':<32}{self['CJK']}",
+            f"{'Hiragana:':<32}{self['Hiragana']}",
+            f"{'Katakana:':<32}{self['Katakana']}",
+            f"{'Punctuations:':<32}{self['punctuations']}",
+            f"{'Whitespaces:':<32}{self['whitespaces']}",
+            f"{'Other Characters:':<32}{self['other_chars']}\n",
 
-            f"{'characters (no spaces):':<32}{self['characters (no spaces)']}",
-            f"{'characters (with spaces):':<32}{self['characters (with spaces)']}"
+            f"{'Characters (no spaces):':<32}{self['chars_no_spaces']}",
+            f"{'Characters (with spaces):':<32}{self['chars_with_spaces']}"
         ]
         return "\n".join(temp)
 
@@ -112,7 +115,7 @@ def statistics(
 ) -> None:
 
     if verbose:
-        overview: List[Tuple[str, Stat]] = []
+        inventory: List[Tuple[str, Stat]] = []
 
     stat = Stat()
     path_list = iterdir(path, suffixes, recursive)
@@ -124,61 +127,99 @@ def statistics(
             raw = f.read()
 
         _stat = Stat()
-        _goups = re.findall(
-            r"([\u4e00-\u9fa5])|(\w)|(\S)|((?<!\n)\n(?!\n))|(\n+)|(\s)|(.)",
+        _goups: List[Tuple[str, ...]] = re.findall(
+            r"([\u4E00-\u9FFF])|"
+            r"([\u3400-\u4DBF\U00020000-\U0002A6DF\U0002A700-\U0002EBEF\U00030000-\U0003134F])|"
+            r"([\u3040-\u309F])|"
+            r"([\u30A0-\u30FF])|"
+            r"(\w)|"
+            r"(\S)|"
+            r"((\s*\n)+)|"
+            r"(\s)|"
+            r"(.)",
             raw,
             # flags=re.DOTALL
         )
-        for j, k, l, m, n, o, p in _goups:
-            if j:  # r"[\u4e00-\u9fa5]"; note that bool("") is False
-                _stat["Chinese characters"] += 1
+        for j, k, l, m, n, o, p, _, q, r in _goups:
+            # note that bool("") is False
+            if j:  # CJK Unified Ideographs
+                _stat["CJK"] += 1
                 _stat["words"] += 1
-            elif k:  # r"\w"
+            elif k:  # CJK Extension
+                _stat["CJK"] += 1
                 _stat["words"] += 1
-            elif l:  # r"\S"
+            elif l:  # Hiragana
+                _stat["Hiragana"] += 1
+                _stat["words"] += 1
+            elif m:  # Katakana
+                _stat["Katakana"] += 1
+                _stat["words"] += 1
+            elif n:  # r"\w"
+                _stat["words"] += 1
+            elif o:  # r"\S"
                 _stat["punctuations"] += 1
-            elif m:  # r"(?<!\n)\n(?!\n)"
-                _stat["lines"] += 1
+            elif p:  # r"(\s*\n)+"
+                _linefeeds: int = p.count("\n")
+                if _linefeeds > 1:
+                    _stat["paragraphs"] += 1
+                _stat["non_blank_lines"] += 1
+                _stat["lines"] += _linefeeds
+                _stat["whitespaces"] += len(p)
+            elif q:  # r"\s"; note that bool(" ") is True
                 _stat["whitespaces"] += 1
-            elif n:  # r"\n+"
-                _stat["lines"] += 1
-                _stat["paragraphs"] += 1
-                _stat["whitespaces"] += len(m)
-            elif o:  # r"\s"; note that bool(" ") is True
-                _stat["whitespaces"] += 1
-            elif p: # r"."
-                _stat["other characters"] += 1
-        _stat["characters (no spaces)"] = _stat["words"] + _stat["punctuations"]
-        _stat["characters (with spaces)"] = _stat["characters (no spaces)"] + _stat["whitespaces"]
+            elif r: # r"."
+                _stat["other_chars"] += 1
+        _linefeeds_at_EOF: int = _goups[-1][7].count("\n")
+        if _linefeeds_at_EOF == 0:
+            _stat["paragraphs"] += 1
+            _stat["non_blank_lines"] += 1
+            _stat["lines"] += 1
+        elif _linefeeds_at_EOF == 1:
+            _stat["paragraphs"] += 1
+        _stat["chars_no_spaces"] = _stat["words"] + _stat["punctuations"]
+        _stat["chars_with_spaces"] = _stat["chars_no_spaces"] + _stat["whitespaces"]
         stat.update(_stat)
 
         if verbose:
-            overview.append((f"{i.name}", _stat))
+            inventory.append((f"{i.name}", _stat))
 
-    message = f"STATISTICS{SEP}" + f"{'files:':<32}{files}\n\n" + str(stat)
+    message = f"STATISTICS{SEP}{'Files:':<32}{files}\n\n{stat}\n"
 
     if verbose:
         details = f"{SEP}".join(
-            f"file: {i[0]}\n\n{i[1]}" for i in overview
+            f"File Name: {i[0]}\n\n{i[1]}" for i in inventory
         )
-        message += f"\n\n\nDETAILS{SEP}{details}"
+        message += f"\n\nDETAILS{SEP}{details}\n"
 
     if redirect_to is not None:
         with open(redirect_to, mode=redirect_mode, newline="\n") as f:
-            print(message, file=f)
+            print(message, file=f, end="")
     else:
-        print(message)
+        print("\n")
+        print(message, end="")
 
 
 def __format(args: argparse.Namespace) -> None:
-    format(path=args.f, suffixes=args.s)
+    path: str = args.f
+    extension = re.search(r"\.\w+$", path)
+    if re.search(r"\.\w+$", path):
+        suffixes = (extension, *args.s, *args.e)
+    else:
+        suffixes = (*args.s, *args.e)
+    format(path, suffixes=suffixes)
 
 
 def __stats(args: argparse.Namespace) -> None:
-    if args.R is None:
-        statistics(args.f, args.s, True, args.v)
+    path: str = args.f
+    extension = re.search(r"\.\w+$", path)
+    if re.search(r"\.\w+$", path):
+        suffixes = (extension, *args.s, *args.e)
     else:
-        statistics(args.f, args.s, True, args.v, args.R[0], args.R[1])
+        suffixes = (*args.s, *args.e)
+    if args.R is None:
+        statistics(path, suffixes, True, args.v)
+    else:
+        statistics(path, suffixes, True, args.v, args.R[0], args.R[1])
 
 
 def main():
@@ -187,16 +228,18 @@ def main():
     parser_format = subparsers.add_parser("format", help="format markdown files")
     parser_format.add_argument("-f", default=".", metavar="", help="file or diractory path (current working directory by default)")
     parser_format.add_argument("-s", action="extend", nargs="+", metavar="", help="specify suffix(es), '.md' for example")
+    parser_format.add_argument("-e", action="extend", nargs="+", metavar="", help="specify extension(s), 'md' for example")
     parser_format.set_defaults(func=__format)
     parser_stats = subparsers.add_parser("stats", help="show statistics")
     parser_stats.add_argument("-f", default=".", metavar="", help="file or diractory path (current working directory by default)")
     parser_stats.add_argument("-s", action="extend", nargs="+", metavar="", help="specify suffix(es), '.md' for example")
+    parser_stats.add_argument("-e", action="extend", nargs="+", metavar="", help="specify extension(s), 'md' for example")
     parser_stats.add_argument("-v", action="store_true", default=False, help="print verbosely")
     parser_stats.add_argument("-R", action="extend", nargs=2, metavar="", help="redirect output; pos 1: file path, pos 2: 'w' for 'write', 'a' for 'append', raise exception elsewise")
     parser_stats.set_defaults(func=__stats)
     args = parser.parse_args()
     args.func(args)
-    print("\nfinished.\n", end="")
+    print("\nfinished.\n")
 
 
 if __name__ == "__main__":
