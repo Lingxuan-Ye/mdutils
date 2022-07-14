@@ -15,7 +15,7 @@ def iterdir(
     recursive: bool = True
 ) -> List[Path]:
     stack = [Path(path)]
-    if suffixes is None:
+    if not suffixes:  # None or empty
         suffixes = (".md", )
     result = []
     while stack:
@@ -113,14 +113,14 @@ def statistics(
     redirect_to: str = None,
     redirect_mode: Literal["w", "a"] = "w"
 ) -> None:
-
-    if verbose:
-        inventory: List[Tuple[str, Stat]] = []
-
-    stat = Stat()
     path_list = iterdir(path, suffixes, recursive)
-    path_list.sort()
     files = len(path_list)
+    print_verbosely = verbose and files > 0
+    if print_verbosely:
+        inventory: List[Tuple[str, Stat]] = []
+    path_list.sort()
+    stat = Stat()
+
     for i in path_list:
 
         with open(i, encoding="utf-8") as f:
@@ -180,12 +180,12 @@ def statistics(
         _stat["chars_with_spaces"] = _stat["chars_no_spaces"] + _stat["whitespaces"]
         stat.update(_stat)
 
-        if verbose:
+        if print_verbosely:
             inventory.append((f"{i.name}", _stat))
 
     message = f"STATISTICS{SEP}{'Files:':<32}{files}\n\n{stat}\n"
 
-    if verbose:
+    if print_verbosely:
         details = f"{SEP}".join(
             f"File Name: {i[0]}\n\n{i[1]}" for i in inventory
         )
@@ -201,21 +201,27 @@ def statistics(
 
 def __format(args: argparse.Namespace) -> None:
     path: str = args.f
-    extension = re.search(r"\.\w+$", path)
-    if re.search(r"\.\w+$", path):
-        suffixes = (extension, *args.s, *args.e)
-    else:
-        suffixes = (*args.s, *args.e)
+    suffixes: List[str] = []
+    temp = re.search(r"\.\w+$", path)
+    if temp is not None:
+        suffixes.append(temp.group())
+    if args.s is not None:
+        suffixes.extend(args.s)
+    if args.e is not None:
+        suffixes.extend(args.e)
     format(path, suffixes=suffixes)
 
 
 def __stats(args: argparse.Namespace) -> None:
     path: str = args.f
-    extension = re.search(r"\.\w+$", path)
-    if re.search(r"\.\w+$", path):
-        suffixes = (extension, *args.s, *args.e)
-    else:
-        suffixes = (*args.s, *args.e)
+    suffixes: List[str] = []
+    temp = re.search(r"\.\w+$", path)
+    if temp is not None:
+        suffixes.append(temp.group())
+    if args.s is not None:
+        suffixes.extend(args.s)
+    if args.e is not None:
+        suffixes.extend(args.e)
     if args.R is None:
         statistics(path, suffixes, True, args.v)
     else:
