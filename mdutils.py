@@ -10,7 +10,7 @@ SEP = "\n" + "-" * 40 + "\n"
 
 
 def iterdir(
-    path: str,
+    path: str = ".",
     suffixes: Container[str] = None,
     recursive: bool = True
 ) -> List[Path]:
